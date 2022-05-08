@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 from random import randint, choice, shuffle
 import pyperclip
+import json
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 
 
@@ -26,18 +27,31 @@ def save():
     website = website_entry.get()
     username = username_entry.get()
     password = password_entry.get()
+    new_data = {website: {
+        'username': username,
+        'password': password,
+    }}
 
-    if len(website) < 1 or len(username) < 1 or len(password) < 1:
+    if len(website) == 0 or len(password) == 0:
         messagebox.showwarning(title='Invalid Input', message='Please fill all fields correctly')
     else:
-        is_ok = messagebox.askokcancel(title=website, message=f'You have entered the following\n'
-                                                              f'Email/Username: {username}\nPassword: {password}\n'
-                                                              f'Is it correct?')
-        if is_ok:
-            with open('data.txt', 'a') as data:
-                data.write(f'{website} | {username} | {password}\n')
-                website_entry.delete(0, 'end')
-                password_entry.delete(0, 'end')
+        try:
+            with open('data.json', 'r') as data_file:
+                # Reading old data
+                data = json.load(data_file)
+        except FileNotFoundError:
+            with open('data.json', 'w') as data_file:
+                # Creating new data
+                json.dump(new_data, data_file, indent=4)
+        else:
+            # Updating old data with new data
+            data.update(new_data)
+            with open('data.json', 'w') as data_file:
+                # Saving updated data
+                json.dump(data, data_file, indent=4)
+        finally:
+            website_entry.delete(0, 'end')
+            password_entry.delete(0, 'end')
 
 # ---------------------------- UI SETUP ------------------------------- #
 
@@ -63,7 +77,7 @@ website_entry.focus()
 username_entry = Entry(width=35)
 username_entry.grid(column=1, row=2, columnspan=2, sticky='EW')
 username_entry.insert(0, 'yourEmail@email.com')
-password_entry = Entry(width=21, show='*')
+password_entry = Entry(width=21)
 password_entry.grid(column=1, row=3, sticky='EW')
 # Buttons
 password_gen_btn = Button(text='Generate Password', command=generate_password)
